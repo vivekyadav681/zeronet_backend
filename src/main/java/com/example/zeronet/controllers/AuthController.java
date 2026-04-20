@@ -44,4 +44,10 @@ public class AuthController {
         AuthResponse resp = authenticationService.login(request);
         return ResponseEntity.ok(resp);
     }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<AuthResponse> refreshToken(@Valid @RequestBody com.example.zeronet.dtos.RefreshTokenRequest request) {
+        AuthResponse resp = authenticationService.refreshToken(request);
+        return ResponseEntity.ok(resp);
+    }
 }

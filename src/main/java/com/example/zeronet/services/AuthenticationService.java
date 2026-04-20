@@ -5,7 +5,10 @@ import com.example.zeronet.dtos.LoginRequest;
 import com.example.zeronet.dtos.OtpVerifyRequest;
 import com.example.zeronet.dtos.RegisterRequest;
 import com.example.zeronet.entities.User;
+import com.example.zeronet.entities.UserProfile;
+import com.example.zeronet.repositories.UserProfileRepository;
 import com.example.zeronet.repositories.UserRepository;
+import com.example.zeronet.dtos.RefreshTokenRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,14 +21,16 @@ import java.util.UUID;
 public class AuthenticationService {
 
     private final UserRepository userRepository;
+    private final UserProfileRepository userProfileRepository;
     private final OtpService otpService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
     @Autowired
-    public AuthenticationService(UserRepository userRepository, OtpService otpService,
-            PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthenticationService(UserRepository userRepository, UserProfileRepository userProfileRepository,
+            OtpService otpService, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
+        this.userProfileRepository = userProfileRepository;
         this.otpService = otpService;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
@@ -52,6 +57,20 @@ public class AuthenticationService {
         newUser.setEmail(email);
         newUser.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(newUser);
+
+        UserProfile profile = new UserProfile();
+        profile.setUser(newUser);
+        profile.setName(request.getName());
+        profile.setPhoneNumber(request.getPhoneNumber());
+        profile.setHometown(request.getHometown());
+        profile.setDateOfBirth(request.getDateOfBirth());
+        profile.setEmergencyContact1Name(request.getEmergencyContact1Name());
+        profile.setEmergencyContact1Phone(request.getEmergencyContact1Phone());
+        profile.setEmergencyContact2Name(request.getEmergencyContact2Name());
+        profile.setEmergencyContact2Phone(request.getEmergencyContact2Phone());
+        profile.setEmergencyContact3Name(request.getEmergencyContact3Name());
+        profile.setEmergencyContact3Phone(request.getEmergencyContact3Phone());
+        userProfileRepository.save(profile);
 
         // Send OTP
         otpService.sendOtpTo(email);
@@ -107,7 +126,22 @@ public class AuthenticationService {
 
         // Generate JWT Token using JwtService
         String token = jwtService.generateToken(user.getEmail());
+        String refreshToken = jwtService.generateRefreshToken(user.getEmail());
 
-        return new AuthResponse(true, "Login successful", token);
+        return new AuthResponse(true, "Login successful", token, refreshToken);
+    }
+
+    public AuthResponse refreshToken(RefreshTokenRequest request) {
+        String reqRefreshToken = request.getRefreshToken();
+        String username = jwtService.extractUsername(reqRefreshToken);
+        if (username != null) {
+            Optional<User> maybeUser = userRepository.findByEmail(username);
+            if (maybeUser.isPresent() && jwtService.isTokenValid(reqRefreshToken, maybeUser.get().getEmail())) {
+                String token = jwtService.generateToken(username);
+                String newRefreshToken = jwtService.generateRefreshToken(username);
+                return new AuthResponse(true, "Token refreshed successfully", token, newRefreshToken);
+            }
+        }
+        return new AuthResponse(false, "Invalid refresh token");
     }
 }
