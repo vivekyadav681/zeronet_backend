@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/incidents")
 public class IncidentController {
@@ -50,5 +52,11 @@ public class IncidentController {
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<IncidentDto>> getUserIncidents(@PathVariable Long userId) {
+        List<IncidentDto> incidents = incidentService.getUserIncidents(userId);
+        return ResponseEntity.ok(incidents);
     }
 }

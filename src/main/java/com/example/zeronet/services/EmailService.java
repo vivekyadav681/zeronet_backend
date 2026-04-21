@@ -35,4 +35,23 @@ public class EmailService {
         // fallback - log the OTP so developer can see it
         log.info("[OTP] to={} otp={}", to, otp);
     }
+
+    public void sendHelpNotification(String to, String messageText) {
+        if (mailSender != null) {
+            try {
+                SimpleMailMessage msg = new SimpleMailMessage();
+                msg.setTo(to);
+                msg.setSubject("URGENT: Help Needed - Zeronet Incident Alert");
+                msg.setText(messageText);
+                mailSender.send(msg);
+                log.info("Sent Help Notification email to {}", to);
+                return;
+            } catch (Exception ex) {
+                log.warn("Failed to send Help Notification email, falling back to logger: {}", ex.getMessage());
+            }
+        }
+
+        // fallback - log the message
+        log.info("[HELP NOTIFICATION] to={}\n{}", to, messageText);
+    }
 }

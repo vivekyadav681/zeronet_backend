@@ -9,7 +9,9 @@ import com.example.zeronet.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class IncidentService {
@@ -66,6 +68,11 @@ public class IncidentService {
             throw new RuntimeException("Incident not found");
         }
         incidentRepository.deleteById(id);
+    }
+
+    public List<IncidentDto> getUserIncidents(Long userId) {
+        List<Incident> incidents = incidentRepository.findBySenderIdOrVictimId(userId, userId);
+        return incidents.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
     private IncidentDto mapToDto(Incident incident) {
