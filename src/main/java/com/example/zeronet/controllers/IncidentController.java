@@ -11,16 +11,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
+
 @RestController
 @RequestMapping("/api/incidents")
+@RequiredArgsConstructor
 public class IncidentController {
 
     private final IncidentService incidentService;
-
-    @Autowired
-    public IncidentController(IncidentService incidentService) {
-        this.incidentService = incidentService;
-    }
 
     @PostMapping
     public ResponseEntity<IncidentDto> createIncident(@Valid @RequestBody CreateIncidentRequest request) {

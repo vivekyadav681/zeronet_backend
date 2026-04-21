@@ -9,18 +9,15 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class OtpService {
 
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final Random random = new Random();
-
-    @Autowired
-    public OtpService(UserRepository userRepository, EmailService emailService) {
-        this.userRepository = userRepository;
-        this.emailService = emailService;
-    }
 
     public String generateOtp() {
         int otp = 100000 + random.nextInt(900000);

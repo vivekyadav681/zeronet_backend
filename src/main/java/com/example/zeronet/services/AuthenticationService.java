@@ -17,7 +17,10 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class AuthenticationService {
 
     private final UserRepository userRepository;
@@ -25,16 +28,6 @@ public class AuthenticationService {
     private final OtpService otpService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-
-    @Autowired
-    public AuthenticationService(UserRepository userRepository, UserProfileRepository userProfileRepository,
-            OtpService otpService, PasswordEncoder passwordEncoder, JwtService jwtService) {
-        this.userRepository = userRepository;
-        this.userProfileRepository = userProfileRepository;
-        this.otpService = otpService;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
-    }
 
     public AuthResponse register(RegisterRequest request) {
         String email = request.getEmail().toLowerCase().trim();

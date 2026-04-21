@@ -12,21 +12,15 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class HelpService {
 
     private final IncidentRepository incidentRepository;
     private final UserProfileRepository userProfileRepository;
     private final EmailService emailService;
-
-    @Autowired
-    public HelpService(IncidentRepository incidentRepository, 
-                       UserProfileRepository userProfileRepository, 
-                       EmailService emailService) {
-        this.incidentRepository = incidentRepository;
-        this.userProfileRepository = userProfileRepository;
-        this.emailService = emailService;
-    }
 
     public HelpDetailsResponse acceptHelp(AcceptHelpRequest request) {
         Optional<Incident> maybeIncident = incidentRepository.findById(request.getIncidentId());

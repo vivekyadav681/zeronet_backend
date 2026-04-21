@@ -13,17 +13,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class IncidentService {
 
     private final IncidentRepository incidentRepository;
     private final UserRepository userRepository;
-
-    @Autowired
-    public IncidentService(IncidentRepository incidentRepository, UserRepository userRepository) {
-        this.incidentRepository = incidentRepository;
-        this.userRepository = userRepository;
-    }
 
     public IncidentDto createIncident(CreateIncidentRequest req) {
         Optional<User> sender = userRepository.findById(req.getSenderId());

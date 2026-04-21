@@ -10,17 +10,14 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class UserProfileService {
 
     private final UserProfileRepository userProfileRepository;
     private final UserRepository userRepository;
-
-    @Autowired
-    public UserProfileService(UserProfileRepository userProfileRepository, UserRepository userRepository) {
-        this.userProfileRepository = userProfileRepository;
-        this.userRepository = userRepository;
-    }
 
     public UserProfileDto getProfile(Long userId) {
         Optional<UserProfile> maybeProfile = userProfileRepository.findByUserId(userId);

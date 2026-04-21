@@ -9,16 +9,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.RequiredArgsConstructor;
+
 @RestController
 @RequestMapping("/api/help")
+@RequiredArgsConstructor
 public class HelpController {
 
     private final HelpService helpService;
-
-    @Autowired
-    public HelpController(HelpService helpService) {
-        this.helpService = helpService;
-    }
 
     @PostMapping("/accept")
     public ResponseEntity<HelpDetailsResponse> acceptHelp(@Valid @RequestBody AcceptHelpRequest request) {

@@ -1,13 +1,28 @@
+server:
+  port: ${PORT:8080}
+
 spring:
   application:
     name: zeronet
+
   config:
     import: optional:file:.env[.properties]
+
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
   mail:
     host: ${MAIL_HOST}
     port: ${MAIL_PORT}

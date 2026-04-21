@@ -6,16 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.RequiredArgsConstructor;
+
 @RestController
 @RequestMapping("/api/profiles")
+@RequiredArgsConstructor
 public class UserProfileController {
 
     private final UserProfileService userProfileService;
-
-    @Autowired
-    public UserProfileController(UserProfileService userProfileService) {
-        this.userProfileService = userProfileService;
-    }
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserProfileDto> getProfile(@PathVariable Long userId) {
