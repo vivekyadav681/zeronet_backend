@@ -83,7 +83,11 @@ public class AuthenticationService {
         user.setOtpExpiry(null);
         userRepository.save(user);
 
-        return new AuthResponse(true, "Email verified");
+        // Generate JWT Tokens after successful verification
+        String token = jwtService.generateToken(user.getEmail());
+        String refreshToken = jwtService.generateRefreshToken(user.getEmail());
+
+        return new AuthResponse(true, "Email verified", token, refreshToken);
     }
 
     public AuthResponse login(LoginRequest request) {
