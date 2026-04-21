@@ -25,19 +25,4 @@ public class RegisterRequest {
 
     @NotBlank
     private String name;
-
-    @NotBlank
-    private String phoneNumber;
-
-    private String hometown;
-
-    @NotNull
-    private LocalDate dateOfBirth;
-
-    private String emergencyContact1Name;
-    private String emergencyContact1Phone;
-    private String emergencyContact2Name;
-    private String emergencyContact2Phone;
-    private String emergencyContact3Name;
-    private String emergencyContact3Phone;
 }

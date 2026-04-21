@@ -15,12 +15,7 @@ This document outlines all the available API endpoints in the Zeronet applicatio
 {
   "email": "user@example.com",
   "password": "SecurePassword123",
-  "name": "John Doe",
-  "phoneNumber": "+1234567890",
-  "hometown": "New York",
-  "dateOfBirth": "1990-01-01",
-  "emergencyContact1Name": "Jane Doe",
-  "emergencyContact1Phone": "+0987654321"
+  "name": "John Doe"
 }
 ```
 

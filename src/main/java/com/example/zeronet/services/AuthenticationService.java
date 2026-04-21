@@ -54,15 +54,6 @@ public class AuthenticationService {
         UserProfile profile = new UserProfile();
         profile.setUser(newUser);
         profile.setName(request.getName());
-        profile.setPhoneNumber(request.getPhoneNumber());
-        profile.setHometown(request.getHometown());
-        profile.setDateOfBirth(request.getDateOfBirth());
-        profile.setEmergencyContact1Name(request.getEmergencyContact1Name());
-        profile.setEmergencyContact1Phone(request.getEmergencyContact1Phone());
-        profile.setEmergencyContact2Name(request.getEmergencyContact2Name());
-        profile.setEmergencyContact2Phone(request.getEmergencyContact2Phone());
-        profile.setEmergencyContact3Name(request.getEmergencyContact3Name());
-        profile.setEmergencyContact3Phone(request.getEmergencyContact3Phone());
         userProfileRepository.save(profile);
 
         // Send OTP
