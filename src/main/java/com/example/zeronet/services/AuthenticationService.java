@@ -1,15 +1,11 @@
 package com.example.zeronet.services;
 
-import com.example.zeronet.dtos.AuthResponse;
-import com.example.zeronet.dtos.LoginRequest;
-import com.example.zeronet.dtos.OtpVerifyRequest;
-import com.example.zeronet.dtos.RegisterRequest;
+import com.example.zeronet.dtos.*;
+import com.example.zeronet.entities.Organization;
 import com.example.zeronet.entities.User;
-import com.example.zeronet.entities.UserProfile;
-import com.example.zeronet.repositories.UserProfileRepository;
+import com.example.zeronet.repositories.OrganizationRepository;
 import com.example.zeronet.repositories.UserRepository;
-import com.example.zeronet.dtos.RefreshTokenRequest;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -17,119 +13,167 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-import lombok.RequiredArgsConstructor;
-
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
 
     private final UserRepository userRepository;
-    private final UserProfileRepository userProfileRepository;
+    private final OrganizationRepository organizationRepository;
     private final OtpService otpService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    public AuthResponse register(RegisterRequest request) {
-        String email = request.getEmail().toLowerCase().trim();
-        Optional<User> existing = userRepository.findByEmail(email);
-        if (existing.isPresent()) {
-            User user = existing.get();
-            if (user.isVerified()) {
-                return new AuthResponse(false, "User already exists and is verified");
-            }
-            // Update password in case they re-register before verification
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
-            userRepository.save(user);
-            
-            // If user exists, re-send OTP
-            otpService.sendOtpTo(email);
-            return new AuthResponse(true, "OTP resent to email");
-        }
-
-        User newUser = new User();
-        newUser.setEmail(email);
-        newUser.setPassword(passwordEncoder.encode(request.getPassword()));
-        userRepository.save(newUser);
-
-        UserProfile profile = new UserProfile();
-        profile.setUser(newUser);
-        profile.setName(request.getName());
-        userProfileRepository.save(profile);
-
-        // Send OTP
-        otpService.sendOtpTo(email);
-        return new AuthResponse(true, "OTP sent to email");
-    }
-
-    public AuthResponse verifyOtp(OtpVerifyRequest request) {
-        String email = request.getEmail().toLowerCase().trim();
-        Optional<User> maybe = userRepository.findByEmail(email);
-        if (maybe.isEmpty()) {
-            return new AuthResponse(false, "User not found");
-        }
-        User user = maybe.get();
-        if (user.getOtp() == null || user.getOtpExpiry() == null) {
-            return new AuthResponse(false, "No OTP requested");
-        }
-        if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
-            return new AuthResponse(false, "OTP expired");
-        }
-        if (!user.getOtp().equals(request.getOtp())) {
-            return new AuthResponse(false, "Invalid OTP");
-        }
-
-        user.setVerified(true);
-        user.setOtp(null);
-        user.setOtpExpiry(null);
-        userRepository.save(user);
-
-        // Generate JWT Tokens after successful verification
-        String token = jwtService.generateToken(user.getEmail());
-        String refreshToken = jwtService.generateRefreshToken(user.getEmail());
-
-        return new AuthResponse(true, "Email verified", token, refreshToken);
-    }
-
+    // POST /auth/login
     public AuthResponse login(LoginRequest request) {
-        String email = request.getEmail().toLowerCase().trim();
-        Optional<User> maybe = userRepository.findByEmail(email);
+        String identifier = request.getEmail() != null ? request.getEmail().toLowerCase().trim() : request.getPhone();
+        Optional<User> maybe = userRepository.findByEmail(identifier);
         if (maybe.isEmpty()) {
-            return new AuthResponse(false, "User not found");
+             maybe = userRepository.findByPhone(identifier);
         }
+        
+        if (maybe.isEmpty()) {
+            return AuthResponse.builder().error(true).code("USER_NOT_FOUND").message("User not found").build();
+        }
+        
         User user = maybe.get();
-        if (user.getOtp() == null || user.getOtpExpiry() == null) {
-            return new AuthResponse(false, "No OTP requested");
-        }
-        if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
-            return new AuthResponse(false, "OTP expired");
-        }
-        if (!user.getOtp().equals(request.getOtp())) {
-            return new AuthResponse(false, "Invalid OTP");
+        if (request.getPassword() != null && !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            return AuthResponse.builder().error(true).code("INVALID_CREDENTIALS").message("Invalid credentials").build();
         }
 
-        user.setVerified(true);
+        return generateLoginResponse(user);
+    }
+
+    // POST /auth/login/otp/request
+    public AuthResponse requestLoginOtp(OtpRequest request) {
+        String identifier = request.getEmail() != null ? request.getEmail().toLowerCase().trim() : request.getPhone();
+        Optional<User> maybe = userRepository.findByEmail(identifier);
+        if (maybe.isEmpty()) {
+             maybe = userRepository.findByPhone(identifier);
+        }
+        
+        if (maybe.isEmpty()) {
+            return AuthResponse.builder().error(true).code("USER_NOT_FOUND").message("User not found").build();
+        }
+
+        otpService.sendOtpTo(identifier); // You would adapt your OtpService to handle phone or email
+        return AuthResponse.builder().message("OTP sent").expiresIn(30).build();
+    }
+
+    // POST /auth/login/otp/verify
+    public AuthResponse verifyLoginOtp(OtpVerifyRequest request) {
+        String identifier = request.getEmail() != null ? request.getEmail().toLowerCase().trim() : request.getPhone();
+        Optional<User> maybe = userRepository.findByEmail(identifier);
+        if (maybe.isEmpty()) {
+             maybe = userRepository.findByPhone(identifier);
+        }
+        
+        if (maybe.isEmpty()) {
+            return AuthResponse.builder().error(true).code("USER_NOT_FOUND").message("User not found").build();
+        }
+        
+        User user = maybe.get();
+        
+        // Simple OTP verification logic for demonstration (assuming OtpService handles real storage)
+        if (user.getOtp() == null || !user.getOtp().equals(request.getOtp()) || user.getOtpExpiry().isBefore(LocalDateTime.now())) {
+            return AuthResponse.builder().error(true).code("INVALID_OTP").message("The OTP entered is incorrect or expired.").build();
+        }
+        
         user.setOtp(null);
         user.setOtpExpiry(null);
         userRepository.save(user);
 
-        // Generate JWT Token using JwtService
-        String token = jwtService.generateToken(user.getEmail());
-        String refreshToken = jwtService.generateRefreshToken(user.getEmail());
-
-        return new AuthResponse(true, "Login successful", token, refreshToken);
+        return generateLoginResponse(user);
     }
 
-    public AuthResponse refreshToken(RefreshTokenRequest request) {
-        String reqRefreshToken = request.getRefreshToken();
-        String username = jwtService.extractUsername(reqRefreshToken);
-        if (username != null) {
-            Optional<User> maybeUser = userRepository.findByEmail(username);
-            if (maybeUser.isPresent() && jwtService.isTokenValid(reqRefreshToken, maybeUser.get().getEmail())) {
-                String token = jwtService.generateToken(username);
-                String newRefreshToken = jwtService.generateRefreshToken(username);
-                return new AuthResponse(true, "Token refreshed successfully", token, newRefreshToken);
-            }
+    // POST /auth/register/send-otp
+    public AuthResponse requestRegisterOtp(OtpRequest request) {
+        String identifier = request.getEmail() != null ? request.getEmail().toLowerCase().trim() : request.getPhone();
+        otpService.sendOtpTo(identifier);
+        
+        // Temporarily store a user to hold the OTP if you don't have Redis
+        Optional<User> maybe = userRepository.findByEmail(identifier);
+        User user = maybe.orElse(new User());
+        user.setEmail(request.getEmail());
+        user.setPhone(request.getPhone());
+        userRepository.save(user);
+        
+        return AuthResponse.builder().message("OTP sent to email/phone").expiresIn(30).build();
+    }
+
+    // POST /auth/register/verify-otp
+    public AuthResponse verifyRegisterOtp(OtpVerifyRequest request) {
+        String identifier = request.getEmail() != null ? request.getEmail().toLowerCase().trim() : request.getPhone();
+        Optional<User> maybe = userRepository.findByEmail(identifier);
+        if (maybe.isEmpty()) {
+            return AuthResponse.builder().error(true).code("USER_NOT_FOUND").message("User not found").build();
         }
-        return new AuthResponse(false, "Invalid refresh token");
+        User user = maybe.get();
+        if (user.getOtp() == null || !user.getOtp().equals(request.getOtp())) {
+            return AuthResponse.builder().error(true).code("INVALID_OTP").message("The OTP entered is incorrect or expired.").build();
+        }
+        user.setVerified(true);
+        userRepository.save(user);
+        
+        return AuthResponse.builder().verified(true).build();
+    }
+
+    // POST /auth/register/organization
+    public AuthResponse registerOrganization(Organization org) {
+        Organization savedOrg = organizationRepository.save(org);
+        
+        Optional<User> userOpt = userRepository.findByEmail(org.getEmail());
+        User user = userOpt.orElse(new User());
+        user.setEmail(org.getEmail());
+        user.setPhone(org.getPhone());
+        user.setOrganizationId(savedOrg.getId());
+        user.setRole("admin");
+        user.setName(org.getContactPerson());
+        user.setVerified(true); // Since they verified during previous step
+        userRepository.save(user);
+        
+        return generateLoginResponse(user);
+    }
+
+    // POST /auth/register/user
+    public AuthResponse registerUser(RegisterRequest request) {
+        Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
+        if (userOpt.isPresent()) {
+            return AuthResponse.builder().error(true).code("USER_EXISTS").message("User already exists").build();
+        }
+        
+        User user = new User();
+        user.setEmail(request.getEmail());
+        user.setName(request.getName());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole("viewer");
+        user.setVerified(false);
+        userRepository.save(user);
+        
+        return AuthResponse.builder()
+            .message("User registered successfully. Please verify your email/phone.")
+            .build();
+    }
+
+    private AuthResponse generateLoginResponse(User user) {
+        String token = jwtService.generateToken(user.getEmail());
+        
+        UserDto dto = UserDto.builder()
+            .id(user.getId())
+            .name(user.getName())
+            .email(user.getEmail())
+            .organizationId(user.getOrganizationId())
+            .role(user.getRole())
+            .build();
+            
+        Organization org = null;
+        if (user.getOrganizationId() != null) {
+             org = organizationRepository.findById(user.getOrganizationId()).orElse(null);
+        }
+
+        return AuthResponse.builder()
+            .token(token)
+            .user(dto)
+            .organization(org)
+            .build();
     }
 }

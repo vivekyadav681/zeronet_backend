@@ -1,51 +1,65 @@
 package com.example.zeronet.controllers;
 
-import com.example.zeronet.dtos.AuthResponse;
-import com.example.zeronet.dtos.LoginRequest;
-import com.example.zeronet.dtos.OtpVerifyRequest;
-import com.example.zeronet.dtos.RegisterRequest;
+import com.example.zeronet.dtos.*;
+import com.example.zeronet.entities.Organization;
 import com.example.zeronet.services.AuthenticationService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import jakarta.validation.Valid;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
-@Validated
+@RequestMapping("/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthenticationService authenticationService;
 
-    @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        AuthResponse resp = authenticationService.register(request);
-        return ResponseEntity.ok(resp);
-    }
-
-    @PostMapping("/verify-otp")
-    public ResponseEntity<AuthResponse> verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
-        AuthResponse resp = authenticationService.verifyOtp(request);
-        return ResponseEntity.ok(resp);
-    }
-
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        AuthResponse resp = authenticationService.login(request);
-        return ResponseEntity.ok(resp);
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+        AuthResponse response = authenticationService.login(request);
+        return handleResponse(response);
     }
 
-    @PostMapping("/refresh-token")
-    public ResponseEntity<AuthResponse> refreshToken(@Valid @RequestBody com.example.zeronet.dtos.RefreshTokenRequest request) {
-        AuthResponse resp = authenticationService.refreshToken(request);
-        return ResponseEntity.ok(resp);
+    @PostMapping("/login/otp/request")
+    public ResponseEntity<AuthResponse> requestLoginOtp(@RequestBody OtpRequest request) {
+        AuthResponse response = authenticationService.requestLoginOtp(request);
+        return handleResponse(response);
+    }
+
+    @PostMapping("/login/otp/verify")
+    public ResponseEntity<AuthResponse> verifyLoginOtp(@RequestBody OtpVerifyRequest request) {
+        AuthResponse response = authenticationService.verifyLoginOtp(request);
+        return handleResponse(response);
+    }
+
+    @PostMapping("/register/send-otp")
+    public ResponseEntity<AuthResponse> sendRegisterOtp(@RequestBody OtpRequest request) {
+        AuthResponse response = authenticationService.requestRegisterOtp(request);
+        return handleResponse(response);
+    }
+
+    @PostMapping("/register/verify-otp")
+    public ResponseEntity<AuthResponse> verifyRegisterOtp(@RequestBody OtpVerifyRequest request) {
+        AuthResponse response = authenticationService.verifyRegisterOtp(request);
+        return handleResponse(response);
+    }
+
+    @PostMapping("/register/organization")
+    public ResponseEntity<AuthResponse> registerOrganization(@RequestBody Organization organization) {
+        AuthResponse response = authenticationService.registerOrganization(organization);
+        return handleResponse(response);
+    }
+
+    @PostMapping("/register/user")
+    public ResponseEntity<AuthResponse> registerUser(@RequestBody RegisterRequest request) {
+        AuthResponse response = authenticationService.registerUser(request);
+        return handleResponse(response);
+    }
+
+    private ResponseEntity<AuthResponse> handleResponse(AuthResponse response) {
+        if (response.getError() != null && response.getError()) {
+            return ResponseEntity.badRequest().body(response);
+        }
+        return ResponseEntity.ok(response);
     }
 }

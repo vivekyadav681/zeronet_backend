@@ -1,0 +1,26 @@
+-- Flyway migration: create organizations table
+CREATE TABLE IF NOT EXISTS organizations (
+    id UUID PRIMARY KEY,
+    org_name VARCHAR(255) NOT NULL,
+    org_type VARCHAR(255),
+    registration_id VARCHAR(255),
+    email VARCHAR(255),
+    phone VARCHAR(255),
+    address TEXT,
+    license VARCHAR(255),
+    contact_person VARCHAR(255),
+    emergency_contact VARCHAR(255),
+    website VARCHAR(255),
+    start_time VARCHAR(10),
+    end_time VARCHAR(10),
+    is_24_hours BOOLEAN DEFAULT FALSE,
+    total_floors INTEGER,
+    security_staff_count INTEGER,
+    city VARCHAR(255),
+    state VARCHAR(255),
+    lat DOUBLE PRECISION,
+    lng DOUBLE PRECISION,
+    radius DOUBLE PRECISION,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -1,50 +1,43 @@
 package com.example.zeronet.entities;
 
 import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import lombok.*;
 
 @Entity
-@Table(name = "users")
+@Table(name = "broadcasts")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class Broadcast {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(updatable = false, nullable = false)
     private UUID id;
 
-    @Column(nullable = false, unique = true)
-    private String email;
-
-    private String password;
-    private String name;
-    private String phone;
+    @Column(columnDefinition = "TEXT")
+    private String message;
+    
+    @Column(name = "audio_url")
+    private String audioUrl;
+    
+    private String type;
     
     @Column(name = "organization_id")
     private UUID organizationId;
     
-    private String role;
+    private String status;
     
-    private String otp;
-    
-    @Column(name = "otp_expiry")
-    private LocalDateTime otpExpiry;
-    
-    @Builder.Default
-    private boolean verified = false;
-
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
-
+    
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
+    
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

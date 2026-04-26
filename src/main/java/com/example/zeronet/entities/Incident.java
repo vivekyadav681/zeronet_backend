@@ -1,14 +1,11 @@
 package com.example.zeronet.entities;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
+import lombok.*;
 import java.time.LocalDateTime;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "incidents")
@@ -20,37 +17,47 @@ import lombok.Setter;
 public class Incident {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(updatable = false, nullable = false)
+    private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
-    private User sender;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "victim_id")
-    private User victim;
-
-    @Column(name = "incident_date_time", nullable = false)
-    private LocalDateTime incidentDateTime;
-
-    @Column(precision = 10, scale = 8)
-    private BigDecimal latitude;
-
-    @Column(precision = 11, scale = 8)
-    private BigDecimal longitude;
-
+    @Column(name = "sos_id", unique = true)
+    private String sosId;
+    
+    @Column(name = "case_name")
+    private String caseName;
+    
     @Column(columnDefinition = "TEXT")
     private String description;
-
-    @Column
+    
+    private String location;
+    private Double lat;
+    private Double lng;
+    private String type;
     private String severity;
+    private String status;
+    
+    @Column(name = "elapsed_time")
+    private String elapsedTime;
 
-    @Column
+    @Column(name = "organization_id")
+    private UUID organizationId;
+    
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "incident_responders",
+        joinColumns = @JoinColumn(name = "incident_id"),
+        inverseJoinColumns = @JoinColumn(name = "responder_id")
+    )
     @Builder.Default
-    private String status = "OPEN";
+    private List<Responder> responders = new ArrayList<>();
+    
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "incident_id")
+    @Builder.Default
+    private List<IncidentTimeline> timeline = new ArrayList<>();
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
@@ -66,5 +73,4 @@ public class Incident {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
-
 }

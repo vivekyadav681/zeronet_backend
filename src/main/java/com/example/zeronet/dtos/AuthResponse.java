@@ -1,29 +1,23 @@
 package com.example.zeronet.dtos;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AuthResponse {
-
-    private boolean success;
-    private String message;
     private String token;
-    private String refreshToken;
-
-    public AuthResponse(boolean success, String message) {
-        this.success = success;
-        this.message = message;
-    }
-
-    public AuthResponse(boolean success, String message, String token) {
-        this.success = success;
-        this.message = message;
-        this.token = token;
-    }
+    private UserDto user;
+    private Object organization; // Can map to Organization entity or DTO later
+    private String message;
+    private Integer expiresIn;
+    private Boolean verified;
+    private Boolean error;
+    private String code;
 }

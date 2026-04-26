@@ -4,9 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class LoginRequest {
+public class OtpRequest {
     private String email;
     private String phone;
-    private String password;
-    private Boolean rememberDevice;
+    private String registrationId;
 }

@@ -1,91 +1,64 @@
 package com.example.zeronet.services;
 
-import com.example.zeronet.dtos.CreateIncidentRequest;
-import com.example.zeronet.dtos.IncidentDto;
+import com.example.zeronet.dtos.IncidentListResponse;
 import com.example.zeronet.entities.Incident;
-import com.example.zeronet.entities.User;
+import com.example.zeronet.entities.Responder;
 import com.example.zeronet.repositories.IncidentRepository;
-import com.example.zeronet.repositories.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.zeronet.repositories.ResponderRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
-import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class IncidentService {
-
     private final IncidentRepository incidentRepository;
-    private final UserRepository userRepository;
+    private final ResponderRepository responderRepository;
 
-    public IncidentDto createIncident(CreateIncidentRequest req) {
-        Optional<User> sender = userRepository.findById(req.getSenderId());
-        if (sender.isEmpty()) {
-            throw new RuntimeException("Sender not found");
-        }
-
-        User victim = null;
-        if (req.getVictimId() != null) {
-            victim = userRepository.findById(req.getVictimId()).orElse(null);
-        }
-
-        Incident incident = new Incident();
-        incident.setSender(sender.get());
-        incident.setVictim(victim);
-        incident.setIncidentDateTime(req.getIncidentDateTime());
-        incident.setLatitude(req.getLatitude());
-        incident.setLongitude(req.getLongitude());
-        incident.setDescription(req.getDescription());
-        incident.setSeverity(req.getSeverity());
-        // status is "OPEN" by default
-
-        incidentRepository.save(incident);
-        return mapToDto(incident);
+    public IncidentListResponse getIncidents(UUID orgId, String status, String type, String timeRange, int page, int limit) {
+        List<Incident> incidents = incidentRepository.findAll();
+        return IncidentListResponse.builder()
+            .incidents(incidents)
+            .total(incidents.size())
+            .page(page)
+            .build();
     }
 
-    public IncidentDto updateIncidentStatus(Long id, String status) {
-        Optional<Incident> maybeIncident = incidentRepository.findById(id);
-        if (maybeIncident.isEmpty()) {
-            throw new RuntimeException("Incident not found");
-        }
-
-        Incident incident = maybeIncident.get();
-        incident.setStatus(status);
-        incidentRepository.save(incident);
-        
-        return mapToDto(incident);
+    public Incident getIncident(UUID id) {
+        return incidentRepository.findById(id).orElseThrow(() -> new RuntimeException("Not found"));
     }
 
-    public void deleteIncident(Long id) {
-        if (!incidentRepository.existsById(id)) {
-            throw new RuntimeException("Incident not found");
+    public Incident updateStatus(UUID id, String status, String responderId) {
+        Incident inc = getIncident(id);
+        inc.setStatus(status);
+        return incidentRepository.save(inc);
+    }
+
+    public Incident escalate(UUID id, String severity, String reason) {
+        Incident inc = getIncident(id);
+        inc.setSeverity(severity);
+        return incidentRepository.save(inc);
+    }
+
+    public Incident assignResponder(UUID id, String responderId) {
+        Incident inc = getIncident(id);
+        if (responderId != null) {
+            Optional<Responder> responder = responderRepository.findById(UUID.fromString(responderId));
+            responder.ifPresent(r -> inc.getResponders().add(r));
         }
+        return incidentRepository.save(inc);
+    }
+
+    public Incident resolveIncident(UUID id, String resolvedBy, String notes) {
+        Incident inc = getIncident(id);
+        inc.setStatus("resolved");
+        return incidentRepository.save(inc);
+    }
+    
+    public void deleteIncident(UUID id) {
         incidentRepository.deleteById(id);
-    }
-
-    public List<IncidentDto> getUserIncidents(Long userId) {
-        List<Incident> incidents = incidentRepository.findBySenderIdOrVictimId(userId, userId);
-        return incidents.stream().map(this::mapToDto).collect(Collectors.toList());
-    }
-
-    private IncidentDto mapToDto(Incident incident) {
-        IncidentDto dto = new IncidentDto();
-        dto.setId(incident.getId());
-        dto.setSenderId(incident.getSender().getId());
-        if (incident.getVictim() != null) {
-            dto.setVictimId(incident.getVictim().getId());
-        }
-        dto.setIncidentDateTime(incident.getIncidentDateTime());
-        dto.setLatitude(incident.getLatitude());
-        dto.setLongitude(incident.getLongitude());
-        dto.setDescription(incident.getDescription());
-        dto.setSeverity(incident.getSeverity());
-        dto.setStatus(incident.getStatus());
-        dto.setCreatedAt(incident.getCreatedAt());
-        return dto;
     }
 }
