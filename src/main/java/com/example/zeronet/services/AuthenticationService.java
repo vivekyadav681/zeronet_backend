@@ -85,38 +85,6 @@ public class AuthenticationService {
         return generateLoginResponse(user);
     }
 
-    // POST /auth/register/send-otp
-    public AuthResponse requestRegisterOtp(OtpRequest request) {
-        String identifier = request.getEmail() != null ? request.getEmail().toLowerCase().trim() : request.getPhone();
-        otpService.sendOtpTo(identifier);
-        
-        // Temporarily store a user to hold the OTP if you don't have Redis
-        Optional<User> maybe = userRepository.findByEmail(identifier);
-        User user = maybe.orElse(new User());
-        user.setEmail(request.getEmail());
-        user.setPhone(request.getPhone());
-        userRepository.save(user);
-        
-        return AuthResponse.builder().message("OTP sent to email/phone").expiresIn(30).build();
-    }
-
-    // POST /auth/register/verify-otp
-    public AuthResponse verifyRegisterOtp(OtpVerifyRequest request) {
-        String identifier = request.getEmail() != null ? request.getEmail().toLowerCase().trim() : request.getPhone();
-        Optional<User> maybe = userRepository.findByEmail(identifier);
-        if (maybe.isEmpty()) {
-            return AuthResponse.builder().error(true).code("USER_NOT_FOUND").message("User not found").build();
-        }
-        User user = maybe.get();
-        if (user.getOtp() == null || !user.getOtp().equals(request.getOtp())) {
-            return AuthResponse.builder().error(true).code("INVALID_OTP").message("The OTP entered is incorrect or expired.").build();
-        }
-        user.setVerified(true);
-        userRepository.save(user);
-        
-        return AuthResponse.builder().verified(true).build();
-    }
-
     // POST /auth/register/organization
     public AuthResponse registerOrganization(Organization org) {
         Organization savedOrg = organizationRepository.save(org);
@@ -161,8 +129,10 @@ public class AuthenticationService {
             .id(user.getId())
             .name(user.getName())
             .email(user.getEmail())
+            .phone(user.getPhone())
             .organizationId(user.getOrganizationId())
             .role(user.getRole())
+            .verified(user.isVerified())
             .build();
             
         Organization org = null;

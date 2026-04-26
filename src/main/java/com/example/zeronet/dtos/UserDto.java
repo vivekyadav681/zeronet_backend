@@ -14,6 +14,8 @@ public class UserDto {
     private UUID id;
     private String name;
     private String email;
+    private String phone;
     private UUID organizationId;
     private String role;
+    private boolean verified;
 }

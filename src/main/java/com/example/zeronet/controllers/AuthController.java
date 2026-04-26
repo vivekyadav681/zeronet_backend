@@ -32,18 +32,6 @@ public class AuthController {
         return handleResponse(response);
     }
 
-    @PostMapping("/register/send-otp")
-    public ResponseEntity<AuthResponse> sendRegisterOtp(@RequestBody OtpRequest request) {
-        AuthResponse response = authenticationService.requestRegisterOtp(request);
-        return handleResponse(response);
-    }
-
-    @PostMapping("/register/verify-otp")
-    public ResponseEntity<AuthResponse> verifyRegisterOtp(@RequestBody OtpVerifyRequest request) {
-        AuthResponse response = authenticationService.verifyRegisterOtp(request);
-        return handleResponse(response);
-    }
-
     @PostMapping("/register/organization")
     public ResponseEntity<AuthResponse> registerOrganization(@RequestBody Organization organization) {
         AuthResponse response = authenticationService.registerOrganization(organization);
